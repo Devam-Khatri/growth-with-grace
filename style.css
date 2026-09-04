@@ -1882,3 +1882,25 @@ button,
 .value-card .primary-btn:hover {
     transform: translateY(-4px);
 }
+/* ======================================================
+   FIX: SECTION TAG DASH CENTERING ON MOBILE
+====================================================== */
+
+@media(max-width:900px) {
+    .page-header .section-tag,
+    .section .section-tag {
+        padding-left: 0;
+        text-indent: 0;
+    }
+
+    .page-header .section-tag::before,
+    .section .section-tag::before {
+        display: none;
+    }
+}
+@media(max-width:768px) {
+    .event-card {
+        padding: 35px 25px;
+    }
+}
+

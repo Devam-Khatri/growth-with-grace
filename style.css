@@ -247,7 +247,7 @@ nav a:hover::after {
 
         linear-gradient(rgba(20, 20, 20, .35), rgba(20, 20, 20, .35)),
 
-        url("images/event2.jpg");
+        url("images/sept1.jpg");
 
     background-size: cover;
 
@@ -1903,4 +1903,250 @@ button,
         padding: 35px 25px;
     }
 }
+/* ======================================================
+   LIGHTBOX / IMAGE VIEWER
+====================================================== */
 
+.lightbox-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, .92);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn .25s ease;
+}
+
+.lightbox-overlay.active {
+    display: flex;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.lightbox-img {
+    max-width: 88%;
+    max-height: 82%;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.5);
+    animation: zoomIn .25s ease;
+}
+
+@keyframes zoomIn {
+    from { transform: scale(.92); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.lightbox-close {
+    position: absolute;
+    top: 25px;
+    right: 35px;
+    font-size: 2.5rem;
+    color: white;
+    cursor: pointer;
+    line-height: 1;
+    transition: .2s;
+}
+
+.lightbox-close:hover {
+    color: var(--accent);
+}
+
+.lightbox-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 3rem;
+    color: white;
+    cursor: pointer;
+    user-select: none;
+    transition: .2s;
+    padding: 10px 20px;
+}
+
+.lightbox-arrow:hover {
+    color: var(--accent);
+}
+
+.lightbox-prev {
+    left: 10px;
+}
+
+.lightbox-next {
+    right: 10px;
+}
+
+@media(max-width:768px) {
+    .lightbox-arrow {
+        font-size: 2rem;
+        padding: 8px 12px;
+    }
+
+    .lightbox-close {
+        top: 15px;
+        right: 20px;
+        font-size: 2rem;
+    }
+}
+/* ======================================================
+   BACK TO TOP BUTTON
+====================================================== */
+
+.back-to-top {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    cursor: pointer;
+    box-shadow: 0 10px 25px rgba(0,0,0,.25);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(15px);
+    transition: .3s;
+    z-index: 998;
+}
+
+.back-to-top.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.back-to-top:hover {
+    background: #611129;
+    transform: translateY(-4px);
+}
+
+@media(max-width:768px) {
+    .back-to-top {
+        bottom: 20px;
+        right: 20px;
+        width: 44px;
+        height: 44px;
+        font-size: 1.2rem;
+    }
+}
+
+/* ======================================================
+   ACTIVE NAV LINK
+====================================================== */
+
+nav a.active {
+    color: var(--primary);
+}
+
+nav a.active::after {
+    width: 100%;
+}
+
+/* ======================================================
+   COPY-TO-CLIPBOARD FEEDBACK
+====================================================== */
+
+.copy-text {
+    cursor: pointer;
+    position: relative;
+}
+
+.copy-toast {
+    position: fixed;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--primary);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 999px;
+    font-size: .9rem;
+    font-weight: 500;
+    opacity: 0;
+    visibility: hidden;
+    transition: .3s;
+    z-index: 9999;
+    box-shadow: 0 10px 25px rgba(0,0,0,.25);
+}
+
+.copy-toast.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+/* ======================================================
+   COUNTDOWN TIMER
+====================================================== */
+
+.countdown-box {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin: 30px 0;
+    flex-wrap: wrap;
+}
+
+.countdown-unit {
+    background: var(--background);
+    border-radius: 16px;
+    padding: 20px 25px;
+    text-align: center;
+    min-width: 85px;
+    box-shadow: 0 10px 25px rgba(0,0,0,.08);
+}
+
+.countdown-unit span {
+    display: block;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--primary);
+    line-height: 1;
+}
+
+.countdown-unit p {
+    font-size: .8rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #666;
+    margin-top: 8px;
+}
+
+@media(max-width:600px) {
+    .countdown-unit {
+        min-width: 70px;
+        padding: 15px 18px;
+    }
+
+    .countdown-unit span {
+        font-size: 1.8rem;
+    }
+}
+
+/* ======================================================
+   LIGHTBOX COUNTER
+====================================================== */
+
+.lightbox-counter {
+    position: absolute;
+    bottom: 25px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: white;
+    background: rgba(255,255,255,.15);
+    padding: 6px 18px;
+    border-radius: 999px;
+    font-size: .9rem;
+    font-weight: 500;
+}

@@ -151,4 +151,31 @@ document.addEventListener('DOMContentLoaded', () => {
     update();
     timer = setInterval(update, 1000);
   }
+
+  const entrepreneurSearch = document.getElementById('entrepreneur-search');
+  const entrepreneurGrid = document.getElementById('entrepreneurs-grid');
+  if (entrepreneurSearch && entrepreneurGrid) {
+    const cards = [...entrepreneurGrid.querySelectorAll('.entrepreneur-card')];
+    const count = document.getElementById('entrepreneur-count');
+    const empty = document.getElementById('entrepreneur-empty');
+    const clear = document.getElementById('clear-entrepreneur-search');
+    const filter = () => {
+      const query = entrepreneurSearch.value.trim().toLowerCase();
+      let visible = 0;
+      cards.forEach(card => {
+        const matches = !query || card.dataset.search.includes(query);
+        card.classList.toggle('is-hidden', !matches);
+        if (matches) visible += 1;
+      });
+      if (count) count.textContent = visible;
+      if (empty) empty.hidden = visible !== 0;
+    };
+    entrepreneurSearch.addEventListener('input', filter);
+    clear?.addEventListener('click', () => {
+      entrepreneurSearch.value = '';
+      entrepreneurSearch.focus();
+      filter();
+    });
+  }
+
 });

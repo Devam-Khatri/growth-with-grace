@@ -3,6 +3,7 @@
 document.addEventListener('DOMContentLoaded', () => {
   const header = document.querySelector('header');
   const nav = document.querySelector('nav');
+  const menuToggle = document.querySelector('.menu-toggle');
 
   if (header) {
     const updateHeader = () => header.classList.toggle('scrolled', window.scrollY > 24);
@@ -10,37 +11,33 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('scroll', updateHeader, { passive: true });
   }
 
-  // Mobile navigation is injected so the existing page markup stays lightweight.
-  if (nav && !document.querySelector('.menu-toggle')) {
-    const toggle = document.createElement('button');
-    toggle.className = 'menu-toggle';
-    toggle.type = 'button';
-    toggle.setAttribute('aria-label', 'Open navigation');
-    toggle.setAttribute('aria-expanded', 'false');
-    toggle.innerHTML = '<span></span><span></span><span></span>';
-    nav.parentElement.insertBefore(toggle, nav);
-
+  if (nav && menuToggle) {
+    nav.id = nav.id || 'site-navigation';
+    menuToggle.setAttribute('aria-controls', nav.id);
     const closeMenu = () => {
       nav.classList.remove('open');
-      toggle.setAttribute('aria-expanded', 'false');
-      toggle.setAttribute('aria-label', 'Open navigation');
+      menuToggle.setAttribute('aria-expanded', 'false');
+      menuToggle.setAttribute('aria-label', 'Open navigation');
     };
-
-    toggle.addEventListener('click', () => {
+    menuToggle.addEventListener('click', () => {
       const open = nav.classList.toggle('open');
-      toggle.setAttribute('aria-expanded', String(open));
-      toggle.setAttribute('aria-label', open ? 'Close navigation' : 'Open navigation');
+      menuToggle.setAttribute('aria-expanded', String(open));
+      menuToggle.setAttribute('aria-label', open ? 'Close navigation' : 'Open navigation');
     });
     nav.querySelectorAll('a').forEach(link => link.addEventListener('click', closeMenu));
+    document.addEventListener('click', event => {
+      if (nav.classList.contains('open') && !nav.contains(event.target) && !menuToggle.contains(event.target)) closeMenu();
+    });
   }
 
-  // Active page
   const currentPage = window.location.pathname.split('/').pop() || 'index.html';
   document.querySelectorAll('nav a').forEach(link => {
-    if (link.getAttribute('href') === currentPage) link.classList.add('active');
+    if (link.getAttribute('href') === currentPage) {
+      link.classList.add('active');
+      link.setAttribute('aria-current', 'page');
+    }
   });
 
-  // Back to top
   const backToTop = document.createElement('button');
   backToTop.className = 'back-to-top';
   backToTop.type = 'button';
@@ -52,24 +49,19 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('scroll', updateTopButton, { passive: true });
   backToTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 
-  // Gallery lightbox
   const grids = [...document.querySelectorAll('.gallery-grid')];
   if (grids.length) {
     const overlay = document.createElement('div');
     overlay.className = 'lightbox-overlay';
-    overlay.innerHTML = `
-      <button class="lightbox-close" type="button" aria-label="Close image viewer">×</button>
-      <button class="lightbox-arrow lightbox-prev" type="button" aria-label="Previous image">‹</button>
-      <img class="lightbox-img" src="" alt="">
-      <button class="lightbox-arrow lightbox-next" type="button" aria-label="Next image">›</button>
-      <div class="lightbox-counter" aria-live="polite"></div>`;
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-label', 'Image viewer');
+    overlay.innerHTML = '<button class="lightbox-close" type="button" aria-label="Close image viewer">×</button><button class="lightbox-arrow lightbox-prev" type="button" aria-label="Previous image">‹</button><img class="lightbox-img" src="" alt=""><button class="lightbox-arrow lightbox-next" type="button" aria-label="Next image">›</button><div class="lightbox-counter" aria-live="polite"></div>';
     document.body.appendChild(overlay);
-
     const imageEl = overlay.querySelector('.lightbox-img');
     const counter = overlay.querySelector('.lightbox-counter');
     let group = [];
     let index = 0;
-
     const render = () => {
       const source = group[index];
       imageEl.src = source.src;
@@ -82,6 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
       render();
       overlay.classList.add('active');
       document.body.style.overflow = 'hidden';
+      overlay.querySelector('.lightbox-close').focus();
     };
     const close = () => {
       overlay.classList.remove('active');
@@ -89,7 +82,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     const next = () => { index = (index + 1) % group.length; render(); };
     const prev = () => { index = (index - 1 + group.length) % group.length; render(); };
-
     grids.forEach(grid => {
       const images = [...grid.querySelectorAll('img')];
       images.forEach((img, i) => img.addEventListener('click', () => open(images, i)));
@@ -97,39 +89,43 @@ document.addEventListener('DOMContentLoaded', () => {
     overlay.querySelector('.lightbox-close').addEventListener('click', close);
     overlay.querySelector('.lightbox-next').addEventListener('click', next);
     overlay.querySelector('.lightbox-prev').addEventListener('click', prev);
-    overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
-    document.addEventListener('keydown', e => {
+    overlay.addEventListener('click', event => { if (event.target === overlay) close(); });
+    document.addEventListener('keydown', event => {
       if (!overlay.classList.contains('active')) return;
-      if (e.key === 'Escape') close();
-      if (e.key === 'ArrowRight') next();
-      if (e.key === 'ArrowLeft') prev();
+      if (event.key === 'Escape') close();
+      if (event.key === 'ArrowRight') next();
+      if (event.key === 'ArrowLeft') prev();
     });
-
     let touchStartX = 0;
-    overlay.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; }, { passive: true });
-    overlay.addEventListener('touchend', e => {
-      const delta = e.changedTouches[0].screenX - touchStartX;
+    overlay.addEventListener('touchstart', event => { touchStartX = event.changedTouches[0].screenX; }, { passive: true });
+    overlay.addEventListener('touchend', event => {
+      const delta = event.changedTouches[0].screenX - touchStartX;
       if (Math.abs(delta) > 50) delta < 0 ? next() : prev();
     }, { passive: true });
   }
 
-  // Copyable contact details
-  const toast = document.createElement('div');
-  toast.className = 'copy-toast';
-  toast.textContent = 'Copied to clipboard';
-  document.body.appendChild(toast);
-  document.querySelectorAll('.copy-text').forEach(el => {
-    el.setAttribute('title', 'Click to copy');
-    el.addEventListener('click', async () => {
-      try {
-        await navigator.clipboard.writeText(el.textContent.trim());
-        toast.classList.add('show');
-        setTimeout(() => toast.classList.remove('show'), 1600);
-      } catch (_) { /* Clipboard may be unavailable in some browsers. */ }
+  const copyable = document.querySelectorAll('.copy-text');
+  if (copyable.length) {
+    const toast = document.createElement('div');
+    toast.className = 'copy-toast';
+    toast.setAttribute('role', 'status');
+    document.body.appendChild(toast);
+    copyable.forEach(el => {
+      el.setAttribute('title', 'Click to copy');
+      el.addEventListener('click', async event => {
+        if (event.detail === 0) return;
+        try {
+          await navigator.clipboard.writeText(el.textContent.trim());
+          toast.textContent = 'Copied';
+          toast.classList.add('show');
+          window.setTimeout(() => toast.classList.remove('show'), 1600);
+        } catch (_) {
+          // The link still performs its normal phone or email action if clipboard access is unavailable.
+        }
+      });
     });
-  });
+  }
 
-  // Event countdown
   const countdown = document.getElementById('event-countdown');
   if (countdown) {
     const target = new Date(countdown.dataset.date).getTime();
@@ -143,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const update = () => {
       const distance = target - Date.now();
       if (distance <= 0) {
-        countdown.innerHTML = '<p style="color:var(--wine);font-weight:700">This event has passed.</p>';
+        countdown.innerHTML = '<p class="countdown-ended">This event has passed.</p>';
         clearInterval(timer);
         return;
       }

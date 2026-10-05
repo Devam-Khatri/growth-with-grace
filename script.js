@@ -49,8 +49,78 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('scroll', updateTopButton, { passive: true });
   backToTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 
+  // Entrepreneur cards: cycle the entrepreneur and business photos every 3 seconds
+  const posters = [...document.querySelectorAll('.entrepreneur-poster')];
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const CYCLE_MS = 3000;
+  posters.forEach((poster, n) => {
+    const slides = [...poster.querySelectorAll('.poster-slide')];
+    if (!slides.length) return;
+
+    const dots = document.createElement('div');
+    dots.className = 'poster-dots';
+    dots.setAttribute('aria-hidden', 'true');
+    slides.forEach(() => dots.appendChild(document.createElement('span')));
+    poster.appendChild(dots);
+
+    const card = poster.closest('.entrepreneur-card');
+    const name = card && card.querySelector('h3') ? card.querySelector('h3').textContent.trim() : 'entrepreneur';
+    poster.setAttribute('role', 'button');
+    poster.setAttribute('tabindex', '0');
+    poster.setAttribute('aria-label', `View photos of ${name}`);
+
+    let current = 0;
+    let paused = false;
+    const isBroken = slide => slide.classList.contains('is-broken');
+    const available = () => slides.filter(slide => !isBroken(slide));
+    const paint = () => {
+      slides.forEach((slide, i) => {
+        slide.classList.toggle('is-active', i === current);
+        dots.children[i].classList.toggle('is-active', i === current);
+        dots.children[i].hidden = isBroken(slide);
+      });
+      dots.hidden = available().length < 2;
+    };
+    const step = () => {
+      if (available().length < 2) return;
+      do { current = (current + 1) % slides.length; } while (isBroken(slides[current]));
+      paint();
+    };
+
+    // If an image file is missing, skip it instead of showing a broken icon
+    const markBroken = slide => {
+      slide.classList.add('is-broken');
+      if (isBroken(slides[current])) {
+        const next = slides.findIndex(item => !isBroken(item));
+        if (next !== -1) current = next;
+      }
+      paint();
+    };
+    slides.forEach(slide => {
+      slide.addEventListener('error', () => markBroken(slide));
+      if (slide.complete && slide.naturalWidth === 0) markBroken(slide);
+    });
+    paint();
+
+    // Pause while a mouse hovers, or while the card has keyboard focus (not after a click or tap)
+    poster.addEventListener('pointerenter', event => { if (event.pointerType === 'mouse') paused = true; });
+    poster.addEventListener('pointerleave', event => { if (event.pointerType === 'mouse') paused = false; });
+    poster.addEventListener('focusin', () => { if (poster.matches(':focus-visible')) paused = true; });
+    poster.addEventListener('focusout', () => { paused = false; });
+
+    // Staggered start keeps every card on a 3 second rhythm without all flipping at once
+    if (!reduceMotion) {
+      window.setTimeout(() => {
+        window.setInterval(() => {
+          if (paused || document.hidden || document.querySelector('.lightbox-overlay.active')) return;
+          step();
+        }, CYCLE_MS);
+      }, n * 250);
+    }
+  });
+
   const grids = [...document.querySelectorAll('.gallery-grid')];
-  if (grids.length) {
+  if (grids.length || posters.length) {
     const overlay = document.createElement('div');
     overlay.className = 'lightbox-overlay';
     overlay.setAttribute('role', 'dialog');
@@ -62,6 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const counter = overlay.querySelector('.lightbox-counter');
     let group = [];
     let index = 0;
+    let returnFocus = null;
     const render = () => {
       const source = group[index];
       imageEl.src = source.src;
@@ -69,6 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
       counter.textContent = `${index + 1} / ${group.length}`;
     };
     const open = (images, i) => {
+      returnFocus = document.activeElement;
       group = images;
       index = i;
       render();
@@ -79,12 +151,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const close = () => {
       overlay.classList.remove('active');
       document.body.style.overflow = '';
+      if (returnFocus && typeof returnFocus.focus === 'function') returnFocus.focus();
     };
     const next = () => { index = (index + 1) % group.length; render(); };
     const prev = () => { index = (index - 1 + group.length) % group.length; render(); };
     grids.forEach(grid => {
       const images = [...grid.querySelectorAll('img')];
       images.forEach((img, i) => img.addEventListener('click', () => open(images, i)));
+    });
+    posters.forEach(poster => {
+      const openFromPoster = () => {
+        const images = [...poster.querySelectorAll('.poster-slide')].filter(img => !img.classList.contains('is-broken'));
+        if (!images.length) return;
+        const start = Math.max(0, images.findIndex(img => img.classList.contains('is-active')));
+        open(images, start);
+      };
+      poster.addEventListener('click', openFromPoster);
+      poster.addEventListener('keydown', event => {
+        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openFromPoster(); }
+      });
     });
     overlay.querySelector('.lightbox-close').addEventListener('click', close);
     overlay.querySelector('.lightbox-next').addEventListener('click', next);
